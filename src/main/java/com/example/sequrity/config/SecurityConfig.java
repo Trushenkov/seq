@@ -5,7 +5,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.context.annotation.Primary;
+import org.springframework.context.annotation.Lazy;
 import org.springframework.security.config.annotation.authentication.builders.AuthenticationManagerBuilder;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
@@ -16,13 +16,15 @@ import org.springframework.security.web.util.matcher.AntPathRequestMatcher;
 
 import javax.sql.DataSource;
 
-
 @Configuration
 @EnableWebSecurity
 public class SecurityConfig extends WebSecurityConfigurerAdapter {
 
-    @Autowired
     private DataSource dataSource;
+
+    public SecurityConfig(@Qualifier("dataSource") DataSource source) {
+        this.dataSource = source;
+    }
 
     @Autowired
     public void configAuthentication(AuthenticationManagerBuilder auth) throws Exception {
@@ -38,24 +40,39 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter {
                                 "left join application.roles as r on r.id = gr.roles and r.deleted  = false " +
                                 "where u.deleted = false and login=?"
                 );
+
+        System.out.println(passwordEncoder().toString());
     }
 
     @Bean
     public PasswordEncoder passwordEncoder(){
-        PasswordEncoder encoder = new BCryptPasswordEncoder();
-        return encoder;
+        return new BCryptPasswordEncoder();
     }
+
+//    private String userLogin;
+//    private String userPassword;
+//
+//    public SecurityConfig(@Value("${user.name}") String userLogin, @Value("${user.password}") String userPassword) {
+//        this.userLogin = userLogin;
+//        this.userPassword = userPassword;
+//    }
 
     @Override
     protected void configure(HttpSecurity http) throws Exception {
-
         http.csrf().disable();
 
-        http.authorizeRequests().antMatchers("/home").authenticated();
-
-        http.formLogin().loginPage("/login").defaultSuccessUrl("/home").failureUrl("/incorrect");
-
-        http.logout().logoutRequestMatcher(new AntPathRequestMatcher("/logout"));
+        http
+                .authorizeRequests()
+                .antMatchers("/home")
+                .authenticated();
+        http
+                .formLogin()
+                    .loginPage("/login")
+                    .defaultSuccessUrl("/home")
+                    .failureUrl("/incorrect");
+        http
+                .logout()
+                .logoutRequestMatcher(new AntPathRequestMatcher("/logout"));
 
         http.httpBasic();
     }
@@ -63,14 +80,9 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter {
 //    @Autowired
 //    public void configureGlobal(AuthenticationManagerBuilder auth) throws Exception {
 //        auth.inMemoryAuthentication()
-////                .withUser(this.userLogin)
-////                .password(this.userPassword)
-////                .roles("USER")
-////                .and()
-//                .withUser("admin")
-//                .password("{noop}admin")
-//                .roles("ADMIN");
+//                .withUser(this.userLogin)
+//                .password(this.userPassword)
+//                .roles("USER");
 //    }
-//
 
 }
