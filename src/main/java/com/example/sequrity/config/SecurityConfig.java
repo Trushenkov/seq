@@ -40,8 +40,6 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter {
                                 "left join application.roles as r on r.id = gr.roles and r.deleted  = false " +
                                 "where u.deleted = false and login=?"
                 );
-
-        System.out.println(passwordEncoder().toString());
     }
 
     @Bean
